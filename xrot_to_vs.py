@@ -523,7 +523,7 @@ print("blade_radius",blade_radius)
 design_data_r = []
 design_data_c = []
 design_data_rot = []
-skip = 9 + float(lines[9].split()[0])*10 + 6
+skip = 9 + int(lines[9].split()[0])*10 + 6
 for line in lines[skip:]:
     d = line.split()
     if(len(d) == 4):
