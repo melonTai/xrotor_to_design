@@ -9,8 +9,6 @@ VectorScriptを出力する
 #=======================================================================
 # リブのオフセット(バルサの場合、外皮の厚み分)[mm]
 rib_offset = 1
-# 後縁治具オフセット
-rear_offset = 0
 # 設計ファイル読み込み(xrotorのrestartfile)
 filename = r"sample\bladeDesign2020_ver13_forApp.txt"
 # サブ翼型のdatファイルパス(ペラ根本、ペラ端で使用)
@@ -676,7 +674,7 @@ while x < blade_radius:
     #後縁治具
     rear_zig_poly_out = offsetPoly(airfoil_poly,-10)# offset-10mm
     rear_zig_poly_out = delete_in_dat(airfoil_poly,rear_zig_poly_out)
-    rear_zig_poly_in = offsetPoly(airfoil_poly, rear_offset)
+    rear_zig_poly_in = airfoil_poly
     rear_zig_offset_y = -300
     rear_zig_offset_x = rib_number*30
 
