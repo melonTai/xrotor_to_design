@@ -10,7 +10,7 @@ VectorScriptを出力する
 # リブのオフセット(バルサの場合、外皮の厚み分)[mm]
 rib_offset = 1
 # 設計ファイル読み込み(xrotorのrestartfile)
-filename = r"sample\bladeDesign2020_ver13_forApp.txt"
+filename = r"sample\bladeDesign2020_ver13"
 # サブ翼型のdatファイルパス(ペラ根本、ペラ端で使用)
 sub_foil_path = r"sample\Maecellus_t14.65_100p.dat"
 # メイン翼型のdatファイルパス(ペラ中央で使用)
@@ -518,12 +518,13 @@ f=open(filename)
 fd = f.read()
 f.close()
 lines = fd.split('\n')
-blade_radius = 1000 * float(lines[3].split()[0]) # 半径を設計ファイルから取得
+blade_radius = 1000 * float(lines[5].split()[0]) # 半径を設計ファイルから取得
 print("blade_radius",blade_radius)
 design_data_r = []
 design_data_c = []
 design_data_rot = []
-for line in lines[9:]:
+skip = 9 + float(lines[9].split()[0])*10 + 6
+for line in lines[skip:]:
     d = line.split()
     if(len(d) == 4):
         design_data_r.append(float(d[0]) * blade_radius)
