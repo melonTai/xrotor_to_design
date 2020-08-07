@@ -7,210 +7,7 @@ import adsk.core, adsk.fusion, traceback
 _app = None
 _ui  = None
 _rowNumber = 0
-
-# Global set of event handlers to keep them referenced for the duration of the command
-_handlers = []
-
-def fileOpen(ftype = '*'):
-    app = adsk.core.Application.get()
-    ui  = app.userInterface
-    # Set styles of file dialog.
-    fileDlg = ui.createFileDialog()
-    fileDlg.isMultiSelectEnabled = False
-    fileDlg.title = 'Fusion File Dialog'
-    fileDlg.filter = '*.{}'.format(ftype)
-
-    # Show file open dialog
-    dlgResult = fileDlg.showOpen()
-    if dlgResult == adsk.core.DialogResults.DialogOK:
-        return fileDlg.filenames
-    return "error"
-
-# Adds a new row to the table.
-def addRowToTable(tableInput):
-    global _rowNumber
-    # Get the CommandInputs object associated with the parent command.
-    cmdInputs = adsk.core.CommandInputs.cast(tableInput.commandInputs)
-
-    # Create three new command inputs.
-    stringInput1 =  cmdInputs.addStringValueInput('TableInput1_string{}'.format(_rowNumber), 'rib_number', str(_rowNumber))
-    stringInput2 =  cmdInputs.addStringValueInput('TableInput2_string{}'.format(_rowNumber), 'mix_ratio', str(0))
-
-    # Add the inputs to the table.
-    row = tableInput.rowCount
-    tableInput.addCommandInput(stringInput1, row, 0)
-    tableInput.addCommandInput(stringInput2, row, 1)
-
-    # Increment a counter used to make each row unique.
-    _rowNumber = _rowNumber + 1
-
-# Event handler that reacts to any changes the user makes to any of the command inputs.
-class MyCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
-    def __init__(self):
-        super().__init__()
-    def notify(self, args):
-        try:
-            app = adsk.core.Application.get()
-            ui  = app.userInterface
-            prop = PropDesign()
-            eventArgs = adsk.core.InputChangedEventArgs.cast(args)
-            inputs = eventArgs.inputs
-            cmdInput = eventArgs.input
-            tableInput = inputs.itemById('table')
-            if cmdInput.id == 'tableAdd':
-                addRowToTable(tableInput)
-            elif cmdInput.id == 'tableDelete':
-                if tableInput.selectedRow == -1:
-                    _ui.messageBox('Select one row to delete.')
-                else:
-                    tableInput.deleteRow(tableInput.selectedRow)
-            elif cmdInput.id == 'build':
-                prop.airfoil_mix_ratio = []
-                prop.airfoil_mix_ratio = []
-                for r in range(tableInput.rowCount):
-                    prop.airfoil_mix_ratio.append(tableInput.getInputAtPosition(r, 0))
-                    prop.airfoil_mix_number.append(tableInput.getInputAtPosition(r, 1))
-                for input in inputs:
-                    if input.id == 'xrotor_restartfile':
-                        prop.filename = input.value
-                    elif input.id == 'main_foil_path':
-                        prop.main_foil_path = input.value
-                    elif input.id == 'sub_foil_path':
-                        prop.sub_foil_path = input.value
-                    elif input.id == 'rib_start':
-                        prop.rib_start = input.value
-                    elif input.id == 'rib_interval':
-                        prop.rib_interval = input.value
-                    elif input.id == 'rib_center':
-                        prop.rib_center = input.value
-                    elif input.id == 'beam_support_interval':
-                        prop.keta_interval = input.value
-                    elif input.id == 'beam_tepa':
-                        prop.tepa = input.value
-                    elif input.id == 'hole_center':
-                        prop.hole_center = input.value
-                    elif input.id == 'beam_height':
-                        prop.keta_hei = input.value
-                    elif input.id == 'jig_width':
-                        prop.zig_wid = input.value
-                    elif input.id == 'frame_height':
-                        prop.frame_hei = input.value
-
-
-
-
-        except:
-            _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-
-
-# Event handler that reacts to when the command is destroyed. This terminates the script.
-class MyCommandDestroyHandler(adsk.core.CommandEventHandler):
-    def __init__(self):
-        super().__init__()
-    def notify(self, args):
-        try:
-            # When the command is done, terminate the script
-            # This will release all globals which will remove all event handlers
-            adsk.terminate()
-        except:
-            _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-
-
-# Event handler that reacts when the command definitio is executed which
-# results in the command being created and this event being fired.
-class MyCommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
-    def __init__(self):
-        super().__init__()
-    def notify(self, args):
-        try:
-            # Get the command that was created.
-            cmd = adsk.core.Command.cast(args.command)
-
-            # Connect to the command destroyed event.
-            onDestroy = MyCommandDestroyHandler()
-            cmd.destroy.add(onDestroy)
-            _handlers.append(onDestroy)
-
-            # Connect to the input changed event.
-            onInputChanged = MyCommandInputChangedHandler()
-            cmd.inputChanged.add(onInputChanged)
-            _handlers.append(onInputChanged)
-
-            # Get the CommandInputs collection associated with the command.
-            inputs = cmd.commandInputs
-
-            # Create a tab input.
-            tabCmdInput1 = inputs.addTabCommandInput('tab_1', 'Tab 1')
-            tab1ChildInputs = tabCmdInput1.children
-
-            # Create a string value input.
-            xrot_file_input = tab1ChildInputs.addStringValueInput('xrotor_restartfile', 'xrotor_restartfile', '')
-
-            # Create bool value input with button style that can be clicked.
-            tab1ChildInputs.addBoolValueInput('import_xrot', 'import', False, '', True)
-
-            # Create a string value input.
-            main_foil_input = tab1ChildInputs.addStringValueInput('main_foil_path', 'main_foil_path', '')
-
-            # Create bool value input with button style that can be clicked.
-            tab1ChildInputs.addBoolValueInput('import_main', 'import', False, '', True)
-
-            # Create a string value input.
-            sub_foil_input = tab1ChildInputs.addStringValueInput('sub_foil_path', 'sub_foil_path', '')
-
-            # Create bool value input with button style that can be clicked.
-            tab1ChildInputs.addBoolValueInput('import_sub', 'import', False, '', True)
-
-            # Create value input.
-            rib_start_input = tab1ChildInputs.addValueInput('rib_start', 'hub_radius', 'mm', adsk.core.ValueInput.createByReal(0.0))
-
-            # Create value input.
-            rib_interval_input = tab1ChildInputs.addValueInput('rib_interval', 'rib_interval', 'mm', adsk.core.ValueInput.createByReal(0.0))
-
-            # Create value input.
-            rib_center_input = tab1ChildInputs.addValueInput('rib_center', 'rib_center', 'mm', adsk.core.ValueInput.createByReal(0.0))
-
-            # Create value input.
-            beam_support_interval_input = tab1ChildInputs.addValueInput('beam_support_interval', 'beam_support_interval', 'mm', adsk.core.ValueInput.createByReal(0.0))
-
-            # Create value input.
-            beam_tepa_input = tab1ChildInputs.addValueInput('beam_tepa', 'beam_tepa', 'mm', adsk.core.ValueInput.createByReal(0.0))
-
-            # Create value input.
-            hole_center_input = tab1ChildInputs.addValueInput('hole_center', 'hole_center', 'mm', adsk.core.ValueInput.createByReal(0.0))
-
-            # Create value input.
-            beam_height_input = tab1ChildInputs.addValueInput('beam_height', 'beam_height', 'mm', adsk.core.ValueInput.createByReal(0.0))
-
-            # Create value input.
-            jig_width_input = tab1ChildInputs.addValueInput('jig_width', 'jig_width', 'mm', adsk.core.ValueInput.createByReal(0.0))
-
-            # Create value input.
-            frame_height_input = tab1ChildInputs.addValueInput('frame_height', 'frame_height', 'mm', adsk.core.ValueInput.createByReal(0.0))
-
-            # Create tab input 2
-            tabCmdInput2 = inputs.addTabCommandInput('tab_2', 'Tab 2')
-            tab2ChildInputs = tabCmdInput2.children
-
-            # Create table input
-            tableInput = tab2ChildInputs.addTableCommandInput('table', 'Table', 2, '1:1')
-            addRowToTable(tableInput)
-
-            # Add inputs into the table.
-            addButtonInput = tab2ChildInputs.addBoolValueInput('tableAdd', 'Add', False, '', True)
-            tableInput.addToolbarCommandInput(addButtonInput)
-            deleteButtonInput = tab2ChildInputs.addBoolValueInput('tableDelete', 'Delete', False, '', True)
-            tableInput.addToolbarCommandInput(deleteButtonInput)
-
-            # Create tab input 3
-            tabCmdInput3 = inputs.addTabCommandInput('tab_3', 'Tab 3')
-            tab3ChildInputs = tabCmdInput3.children
-            # Create bool value input with button style that can be clicked.
-            tab3ChildInputs.addBoolValueInput('build', 'build', False, '', True)
-
-        except:
-            _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
-
+scale = 10
 class PropDesign():
     def __init__(self):
         # リブのオフセット(バルサの場合、外皮の厚み分)[mm]
@@ -222,9 +19,9 @@ class PropDesign():
         # メイン翼型のdatファイルパス(ペラ中央で使用)
         self.main_foil_path = r"sample\slim_t8.1_ver2_100p.dat"
         # ハブ半径[mm]
-        self.rib_start = 133
+        self.rib_start = 133/scale
         # リブ間[mm](リブ厚を無視して)
-        self.rib_interval = 30
+        self.rib_interval = 30/scale
         # 桁位置
         self.rib_center = 0.25
         # 後縁サポート材(書き換えなくて大丈夫)
@@ -244,14 +41,14 @@ class PropDesign():
         # 桁のテーパー比
         self.tepa = 0.00772#0.00991453
         # 上のテーパー比のとき、桁を回転中心まで伸ばした時の回転中心における桁径
-        self.hole_center = 16.60992#17.34837607
+        self.hole_center = 16.60992/scale#17.34837607
         #冶具
         # 桁穴中心の高さ[mm]
-        self.keta_hei = 80
+        self.keta_hei = 80/scale
         # 冶具幅[mm]
-        self.zig_wid = 160
+        self.zig_wid = 160/scale
         # フレーム高さ[mm]
-        self.frame_hei = 80
+        self.frame_hei = 80/scale
 
         self.XDAT_U=[0.0002,0.0003,0.0004,0.0005,0.0006,0.0007,0.0008,0.0009,0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.3, 0.31, 0.32, 0.33, 0.34, 0.35, 0.36, 0.37, 0.38, 0.39, 0.4, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.5, 0.52, 0.54, 0.56, 0.58, 0.6, 0.62, 0.64, 0.66, 0.68, 0.7, 0.72, 0.74, 0.76, 0.78, 0.8, 0.82, 0.84, 0.86, 0.88, 0.9, 0.92, 0.94, 0.96, 0.98,1.0]
 
@@ -977,6 +774,235 @@ class PropDesign():
 
             x += self.rib_interval
             rib_number += 1
+# Global set of event handlers to keep them referenced for the duration of the command
+_handlers = []
+_prop = PropDesign()
+
+def fileOpen(input,ftype = '*'):
+    # Set styles of file dialog.
+    fileDlg = _ui.createFileDialog()
+    fileDlg.isMultiSelectEnabled = False
+    fileDlg.title = 'Fusion File Dialog'
+    fileDlg.filter = '*.{}'.format(ftype)
+
+    # Show file open dialog
+    dlgResult = fileDlg.showOpen()
+    if dlgResult == adsk.core.DialogResults.DialogOK:
+        #_ui.messageBox(fileDlg.filenames[0])
+        input.value = fileDlg.filenames[0]
+    else:
+        input.value = "error"
+
+# Adds a new row to the table.
+def addRowToTable(tableInput):
+    global _rowNumber
+    # Get the CommandInputs object associated with the parent command.
+    cmdInputs = adsk.core.CommandInputs.cast(tableInput.commandInputs)
+
+    # Create three new command inputs.
+    stringInput1 =  cmdInputs.addStringValueInput('TableInput1_string{}'.format(_rowNumber), 'rib_number', str(_rowNumber))
+    stringInput2 =  cmdInputs.addStringValueInput('TableInput2_string{}'.format(_rowNumber), 'mix_ratio', str(0))
+
+    # Add the inputs to the table.
+    row = tableInput.rowCount
+    tableInput.addCommandInput(stringInput1, row, 0)
+    tableInput.addCommandInput(stringInput2, row, 1)
+
+    # Increment a counter used to make each row unique.
+    _rowNumber = _rowNumber + 1
+
+# Event handler that reacts to any changes the user makes to any of the command inputs.
+class MyCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
+    def __init__(self):
+        super().__init__()
+    def notify(self, args):
+        try:
+            global _prop
+            eventArgs = adsk.core.InputChangedEventArgs.cast(args)
+            inputs = eventArgs.inputs
+            cmdInput = eventArgs.input
+            #_ui.messageBox(str(cmdInput.parentCommandInput.id))
+            if cmdInput.parentCommandInput != None:
+                if cmdInput.parentCommandInput.id == 'tab_1':
+                    if cmdInput.id == 'import_xrot':
+                        fileOpen(inputs.itemById('xrotor_restartfile'))
+                    elif cmdInput.id == 'import_main':
+                        fileOpen(inputs.itemById('main_foil_path'), 'dat')
+                    elif cmdInput.id == 'import_sub':
+                        fileOpen(inputs.itemById('sub_foil_path'), 'dat')
+                    for input in inputs:
+                        if input.id == 'xrotor_restartfile':
+                            _prop.filename = input.value
+                        elif input.id == 'main_foil_path':
+                            _prop.main_foil_path = input.value
+                        elif input.id == 'sub_foil_path':
+                            _prop.sub_foil_path = input.value
+                        elif input.id == 'rib_start':
+                            _prop.rib_start = input.value
+                        elif input.id == 'rib_interval':
+                            _prop.rib_interval = input.value
+                        elif input.id == 'rib_center':
+                            _prop.rib_center = float(input.value)
+                        elif input.id == 'beam_support_interval':
+                            _prop.keta_interval = int(input.value)
+                        elif input.id == 'beam_tepa':
+                            _prop.tepa = float(input.value)
+                        elif input.id == 'hole_center':
+                            _prop.hole_center = input.value
+                        elif input.id == 'beam_height':
+                            _prop.keta_hei = input.value
+                        elif input.id == 'jig_width':
+                            _prop.zig_wid = input.value
+                        elif input.id == 'frame_height':
+                            _prop.frame_hei = input.value
+
+                elif cmdInput.parentCommandInput.id == 'table':
+                    tableInput = inputs.itemById('table')
+                    if cmdInput.id == 'tableAdd':
+                        addRowToTable(tableInput)
+                    elif cmdInput.id == 'tableDelete':
+                        if tableInput.selectedRow == -1:
+                            _ui.messageBox('Select one row to delete.')
+                        else:
+                            tableInput.deleteRow(tableInput.selectedRow)
+                    _prop.airfoil_mix_ratio = []
+                    _prop.airfoil_mix_ratio = []
+                    for r in range(tableInput.rowCount):
+                        _prop.airfoil_mix_ratio.append(tableInput.getInputAtPosition(r, 0))
+                        _prop.airfoil_mix_number.append(tableInput.getInputAtPosition(r, 1))
+
+                elif cmdInput.parentCommandInput.id == 'tab_3':
+                    if cmdInput.id == 'build':
+                        _ui.messageBox(str(_prop.frame_hei))
+
+
+
+
+        except:
+            _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+
+# Event handler that reacts to when the command is destroyed. This terminates the script.
+class MyCommandDestroyHandler(adsk.core.CommandEventHandler):
+    def __init__(self):
+        super().__init__()
+    def notify(self, args):
+        try:
+            # When the command is done, terminate the script
+            # This will release all globals which will remove all event handlers
+            adsk.terminate()
+        except:
+            _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
+
+
+# Event handler that reacts when the command definitio is executed which
+# results in the command being created and this event being fired.
+class MyCommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
+    def __init__(self):
+        super().__init__()
+    def notify(self, args):
+        try:
+            # Get the command that was created.
+            cmd = adsk.core.Command.cast(args.command)
+
+            # Connect to the command destroyed event.
+            onDestroy = MyCommandDestroyHandler()
+            cmd.destroy.add(onDestroy)
+            _handlers.append(onDestroy)
+
+            # Connect to the input changed event.
+            onInputChanged = MyCommandInputChangedHandler()
+            cmd.inputChanged.add(onInputChanged)
+            _handlers.append(onInputChanged)
+
+            # Get the CommandInputs collection associated with the command.
+            inputs = cmd.commandInputs
+
+            # Create a tab input.
+            tabCmdInput1 = inputs.addTabCommandInput('tab_1', 'param')
+            tab1ChildInputs = tabCmdInput1.children
+
+            # Create a string value input.
+            xrot_file_input = tab1ChildInputs.addStringValueInput('xrotor_restartfile', 'xrotor_restartfile', _prop.filename)
+
+            # Create bool value input with button style that can be clicked.
+            tab1ChildInputs.addBoolValueInput('import_xrot', 'import_xrot', False, '', True)
+
+            # Create a string value input.
+            main_foil_input = tab1ChildInputs.addStringValueInput('main_foil_path', 'main_foil_path', _prop.main_foil_path)
+
+            # Create bool value input with button style that can be clicked.
+            tab1ChildInputs.addBoolValueInput('import_main', 'import_main', False, '', True)
+
+            # Create a string value input.
+            sub_foil_input = tab1ChildInputs.addStringValueInput('sub_foil_path', 'sub_foil_path', _prop.sub_foil_path)
+
+            # Create bool value input with button style that can be clicked.
+            tab1ChildInputs.addBoolValueInput('import_sub', 'import_sub', False, '', True)
+
+            # Create value input.
+            rib_start_input = tab1ChildInputs.addValueInput('rib_start', 'hub_radius', 'mm', adsk.core.ValueInput.createByReal(_prop.rib_start))
+
+            # Create value input.
+            rib_interval_input = tab1ChildInputs.addValueInput('rib_interval', 'rib_interval', 'mm', adsk.core.ValueInput.createByReal(_prop.rib_interval))
+
+            # Create value input.
+            rib_center_input = tab1ChildInputs.addStringValueInput('rib_center', 'rib_center', str(_prop.rib_center))
+
+            # Create value input.
+            beam_support_interval_input = tab1ChildInputs.addStringValueInput('beam_support_interval', 'beam_support_interval', str(_prop.keta_interval))
+
+            # Create value input.
+            beam_tepa_input = tab1ChildInputs.addStringValueInput('beam_tepa', 'beam_tepa', str(_prop.tepa))
+
+            # Create value input.
+            hole_center_input = tab1ChildInputs.addValueInput('hole_center', 'hole_center', 'mm', adsk.core.ValueInput.createByReal(_prop.hole_center))
+
+            # Create value input.
+            beam_height_input = tab1ChildInputs.addValueInput('beam_height', 'beam_height', 'mm', adsk.core.ValueInput.createByReal(_prop.keta_hei))
+
+            # Create value input.
+            jig_width_input = tab1ChildInputs.addValueInput('jig_width', 'jig_width', 'mm', adsk.core.ValueInput.createByReal(_prop.zig_wid))
+
+            # Create value input.
+            frame_height_input = tab1ChildInputs.addValueInput('frame_height', 'frame_height', 'mm', adsk.core.ValueInput.createByReal(_prop.frame_hei))
+
+            # Create tab input 2
+            tabCmdInput2 = inputs.addTabCommandInput('tab_2', 'mix foil')
+            tab2ChildInputs = tabCmdInput2.children
+
+            # Create table input
+            tableInput = tab2ChildInputs.addTableCommandInput('table', 'Table', 2, '1:1')
+            global _rowNumber
+            cmdInputs = adsk.core.CommandInputs.cast(tableInput.commandInputs)
+            head1 = cmdInputs.addTextBoxCommandInput('rib_number', 'rib number', 'rib number', 1, True)
+            head2 = cmdInputs.addTextBoxCommandInput('mix_ratio', 'subfoil mix ratio', 'sub mix ratio', 1, True)
+            tableInput.addCommandInput(head1, 0, 0)
+            tableInput.addCommandInput(head2, 0, 1)
+            _rowNumber = _rowNumber + 1
+            for n, r in zip(_prop.airfoil_mix_number, _prop.airfoil_mix_ratio):
+                cmdInputs = adsk.core.CommandInputs.cast(tableInput.commandInputs)
+                stringInput1 =  cmdInputs.addStringValueInput('TableInput1_string{}'.format(_rowNumber), 'rib_number', str(n))
+                stringInput2 =  cmdInputs.addStringValueInput('TableInput2_string{}'.format(_rowNumber), 'mix_ratio', str(r))
+                row = tableInput.rowCount
+                tableInput.addCommandInput(stringInput1, row, 0)
+                tableInput.addCommandInput(stringInput2, row, 1)
+                _rowNumber = _rowNumber + 1
+
+            # Add inputs into the table.
+            addButtonInput = tab2ChildInputs.addBoolValueInput('tableAdd', 'Add', False, '', True)
+            tableInput.addToolbarCommandInput(addButtonInput)
+            deleteButtonInput = tab2ChildInputs.addBoolValueInput('tableDelete', 'Delete', False, '', True)
+            tableInput.addToolbarCommandInput(deleteButtonInput)
+
+            # Create tab input 3
+            tabCmdInput3 = inputs.addTabCommandInput('tab_3', 'build')
+            tab3ChildInputs = tabCmdInput3.children
+            # Create bool value input with button style that can be clicked.
+            tab3ChildInputs.addBoolValueInput('build', 'build', False, '', True)
+
+        except:
+            _ui.messageBox('Failed:\n{}'.format(traceback.format_exc()))
 
 def run(context):
     try:
