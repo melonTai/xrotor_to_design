@@ -65,8 +65,11 @@ class MyCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                 else:
                     tableInput.deleteRow(tableInput.selectedRow)
             elif cmdInput.id == 'build':
+                prop.airfoil_mix_ratio = []
+                prop.airfoil_mix_ratio = []
                 for r in range(tableInput.rowCount):
-                    getInputAtPosition(row, column)
+                    prop.airfoil_mix_ratio.append(tableInput.getInputAtPosition(r, 0))
+                    prop.airfoil_mix_number.append(tableInput.getInputAtPosition(r, 1))
                 for input in inputs:
                     if input.id == 'xrotor_restartfile':
                         prop.filename = input.value
@@ -234,9 +237,10 @@ class PropDesign():
         self.airfoil_mix_tip = [10,20,30,40,50,60,70,80,90,100,100,100,100,100]
         # 先端において何番リブから混ぜ始めるか
         self.tip_mix_start = 30
-        # リブ番号と混合比
-        self.airfoil_mix = [[0,100],[1,95],[2,90],[3,85],[4,80],[5,75],[6,70],[7,65],[8,60],[9,55],[10,50],[11,45],[12,40],[13,35],[14,30],[15,25],[16,20],[17,15],[18,10],
-                            [30,10],[31,20],[32,30],[33,40],[34,50],[35,60],[36,70],[37,80],[38,90],[39,100],[40,100],[41,100],[42,100],[43,100]]
+        # 混合比
+        self.airfoil_mix_ratio = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,10,20,30,40,50,60,70,80,90,100,100,100,100,100]
+        # 混合するリブ番号
+        self.airfoil_mix_number = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,30,31,32,33,34,35,36,37,38,39,40,41,42,43]
         # 桁のテーパー比
         self.tepa = 0.00772#0.00991453
         # 上のテーパー比のとき、桁を回転中心まで伸ばした時の回転中心における桁径
@@ -772,14 +776,18 @@ class PropDesign():
             hole = self.hole_center-self.tepa*x
 
             airfoil_data = []
-
+            """
             if rib_number < len(self.airfoil_mix_root):
                 mix = self.airfoil_mix_root[rib_number] / 100.0
             elif self.tip_mix_start<=rib_number and rib_number-self.tip_mix_start<len(self.airfoil_mix_tip):
                 mix = self.airfoil_mix_tip[rib_number-self.tip_mix_start]/100.0
             else:
                 mix = 0
-
+            """
+            if rib_number in self.airfoil_mix_number:
+                mix = self.airfoil_mix_ratio[self.airfoil_mix_number.index(rib_number)]
+            else:
+                mix = 0
             airfoil_data = self.interpolate_dat([sub_foil,main_foil],[mix,1-mix])
             rib_center_camber = self.getCenterThickness(airfoil_data, self.rib_center)
 
