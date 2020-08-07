@@ -12,11 +12,11 @@ xrotor ver 7.5.5
 # リブのオフセット(バルサの場合、外皮の厚み分)[mm]
 rib_offset = 1
 # 設計ファイル読み込み(xrotorのrestartfile)
-filename = r"sample\bladeDesign2020_ver13"
+filename = r"data\bladeDesign2020_ver13"
 # サブ翼型のdatファイルパス(ペラ根本、ペラ端で使用)
-sub_foil_path = r"sample\Maecellus_t14.65_100p.dat"
+sub_foil_path = r"data\Maecellus_t14.65_100p.dat"
 # メイン翼型のdatファイルパス(ペラ中央で使用)
-main_foil_path = r"sample\slim_t8.1_ver2_100p.dat"
+main_foil_path = r"data\slim_t8.1_ver2_100p.dat"
 # 出力ファイル名
 output_filename = "output.txt"
 # ハブ半径[mm]
