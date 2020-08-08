@@ -1,39 +1,33 @@
 #Author-fujita yuki
-#xrotorのrestartファイルから自動図面生成
+#Description-xrotor(プロペラ設計ソフト)のrestartfileから図面を自動生成するスクリプト。\nfusion360上のUIからパラメータを入力できるようにしている。
 
-
-import adsk.core, adsk.fusion, traceback
+import adsk.core, adsk.fusion, traceback, math, os
 
 _app = None
 _ui  = None
 _rowNumber = 0
-scale = 10
+_scale = 10
 class PropDesign():
     def __init__(self):
+
         # リブのオフセット(バルサの場合、外皮の厚み分)[mm]
         self.rib_offset = 1
         # 設計ファイル読み込み(xrotorのrestartfile)
-        self.filename = r"sample\bladeDesign2020_ver13"
+        self.filename = r"data\bladeDesign2020_ver13"
         # サブ翼型のdatファイルパス(ペラ根本、ペラ端で使用)
-        self.sub_foil_path = r"sample\Maecellus_t14.65_100p.dat"
+        self.sub_foil_path = r"data\Maecellus_t14.65_100p.dat"
         # メイン翼型のdatファイルパス(ペラ中央で使用)
-        self.main_foil_path = r"sample\slim_t8.1_ver2_100p.dat"
+        self.main_foil_path = r"data\slim_t8.1_ver2_100p.dat"
         # ハブ半径[mm]
-        self.rib_start = 133/scale
+        self.rib_start = 133
         # リブ間[mm](リブ厚を無視して)
-        self.rib_interval = 30/scale
+        self.rib_interval = 30
         # 桁位置
         self.rib_center = 0.25
         # 後縁サポート材(書き換えなくて大丈夫)
         self.rib_rear = -50
         # 桁支持具の間隔(リブ何個ごとに作るか)
         self.keta_interval = 11
-        # 各リブにおけるサブ翼型の混合比(根本側)
-        self.airfoil_mix_root = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10]
-        # 各リブにおけるサブ翼型の混合比(先端側)
-        self.airfoil_mix_tip = [10,20,30,40,50,60,70,80,90,100,100,100,100,100]
-        # 先端において何番リブから混ぜ始めるか
-        self.tip_mix_start = 30
         # 混合比
         self.airfoil_mix_ratio = [100,95,90,85,80,75,70,65,60,55,50,45,40,35,30,25,20,15,10,10,20,30,40,50,60,70,80,90,100,100,100,100,100]
         # 混合するリブ番号
@@ -41,14 +35,14 @@ class PropDesign():
         # 桁のテーパー比
         self.tepa = 0.00772#0.00991453
         # 上のテーパー比のとき、桁を回転中心まで伸ばした時の回転中心における桁径
-        self.hole_center = 16.60992/scale#17.34837607
+        self.hole_center = 16.60992#17.34837607
         #冶具
         # 桁穴中心の高さ[mm]
-        self.keta_hei = 80/scale
+        self.keta_hei = 80
         # 冶具幅[mm]
-        self.zig_wid = 160/scale
+        self.zig_wid = 160
         # フレーム高さ[mm]
-        self.frame_hei = 80/scale
+        self.frame_hei = 80
 
         self.XDAT_U=[0.0002,0.0003,0.0004,0.0005,0.0006,0.0007,0.0008,0.0009,0.001,0.002,0.003,0.004,0.005,0.006,0.007,0.008,0.009,0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09, 0.1, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25, 0.26, 0.27, 0.28, 0.29, 0.3, 0.31, 0.32, 0.33, 0.34, 0.35, 0.36, 0.37, 0.38, 0.39, 0.4, 0.41, 0.42, 0.43, 0.44, 0.45, 0.46, 0.47, 0.48, 0.49, 0.5, 0.52, 0.54, 0.56, 0.58, 0.6, 0.62, 0.64, 0.66, 0.68, 0.7, 0.72, 0.74, 0.76, 0.78, 0.8, 0.82, 0.84, 0.86, 0.88, 0.9, 0.92, 0.94, 0.96, 0.98,1.0]
 
@@ -516,12 +510,32 @@ class PropDesign():
         else:
             return r
 
+    def set_scale(self,ps,scale):
+        return [[p[0] / scale, p[1] / scale] for p in ps]
+
     def build(self):
+        global _app, _ui, _scale
+
+        _app = adsk.core.Application.get()
+        _ui = _app.userInterface
+
+        doc = _app.documents.add(adsk.core.DocumentTypes.FusionDesignDocumentType)
+        design = _app.activeProduct
+
+        # Get the root component of the active design.
+        rootComp = design.rootComponent
+
+        # Set styles of progress dialog.
+        progressDialog = _ui.createProgressDialog()
+        progressDialog.cancelButtonText = 'Cancel'
+        progressDialog.isBackgroundTranslucent = False
+        progressDialog.isCancelButtonShown = True
+
         f=open(self.filename)
         fd = f.read()
         f.close()
         lines = fd.split('\n')
-        blade_radius = 1000 * float(lines[5].split()[0]) # 半径を設計ファイルから取得
+        blade_radius = 1000 * float(lines[5].split()[0])# 半径を設計ファイルから取得
         print("blade_radius",blade_radius)
         design_data_r = []
         design_data_c = []
@@ -563,35 +577,72 @@ class PropDesign():
         last_rearR = -1
         last_rearL = -1
 
+        # Show dialog
+        progressDialog.show('Progress Dialog', 'Percentage: %p, Current Value: %v, Total steps: %m', 0, int((blade_radius-self.rib_start)/self.rib_interval), 1)
+
+        line_rib_collections = []
+        line_jig_collections = []
+        line_rear1_collections = []
+        line_rear2_collections = []
+        line_beamsup_collections = []
+        sketch_rib_collections = []
+        sketch_jig_collections = []
+        sketch_rear1_collections = []
+        sketch_rear2_collections = []
+        sketch_beamsup_collections = []
+
+
         while x < blade_radius:
-            print("rib:",rib_number)
-            # 翼弦長
+
+            # If progress dialog is cancelled, stop drawing.
+            if progressDialog.wasCancelled:
+                break
+
+            # Create a new sketch on the xy plane.
+            sketch_rib_collections.append(rootComp.sketches.add(rootComp.xYConstructionPlane))
+            sketch_rib = sketch_rib_collections[-1]
+            sketch_jig_collections.append(rootComp.sketches.add(rootComp.xYConstructionPlane))
+            sketch_jig = sketch_jig_collections[-1]
+            sketch_rear1_collections.append(rootComp.sketches.add(rootComp.xYConstructionPlane))
+            sketch_rear1 = sketch_rear1_collections[-1]
+            sketch_rear2_collections.append(rootComp.sketches.add(rootComp.xYConstructionPlane))
+            sketch_rear2 = sketch_rear2_collections[-1]
+            sketch_beamsup_collections.append(rootComp.sketches.add(rootComp.xYConstructionPlane))
+            sketch_beamsup = sketch_beamsup_collections[-1]
+
+            line_rib_collections.append(sketch_rib.sketchCurves.sketchLines)
+            line_rib_collection = line_rib_collections[-1]
+            line_jig_collections.append(sketch_jig.sketchCurves.sketchLines)
+            line_jig_collection = line_jig_collections[-1]
+            line_rear1_collections.append(sketch_rear1.sketchCurves.sketchLines)
+            line_rear1_collection = line_rear1_collections[-1]
+            line_rear2_collections.append(sketch_rear2.sketchCurves.sketchLines)
+            line_rear2_collection = line_rear2_collections[-1]
+            line_beamsup_collections.append(sketch_beamsup.sketchCurves.sketchLines)
+            line_beamsup_collection = line_beamsup_collections[-1]
+
+            # chord
             cmod = self.linear(design_data_r, design_data_c, x)
-            # 水平面を0度としたときのリブの角度をrot_offset分平行移動したもの
+            # pitch
             rot = -self.linear(design_data_r, design_data_rot, x) - rot_offset
-            # 各リブの桁穴直径
+            # beam hole
             hole = self.hole_center-self.tepa*x
 
+            # interpolate airfoil
             airfoil_data = []
-            """
-            if rib_number < len(self.airfoil_mix_root):
-                mix = self.airfoil_mix_root[rib_number] / 100.0
-            elif self.tip_mix_start<=rib_number and rib_number-self.tip_mix_start<len(self.airfoil_mix_tip):
-                mix = self.airfoil_mix_tip[rib_number-self.tip_mix_start]/100.0
-            else:
-                mix = 0
-            """
             if rib_number in self.airfoil_mix_number:
-                mix = self.airfoil_mix_ratio[self.airfoil_mix_number.index(rib_number)]
+                mix = self.airfoil_mix_ratio[self.airfoil_mix_number.index(rib_number)] / 100
             else:
                 mix = 0
+            print(mix)
+            #mix = 0
             airfoil_data = self.interpolate_dat([sub_foil,main_foil],[mix,1-mix])
             rib_center_camber = self.getCenterThickness(airfoil_data, self.rib_center)
 
+            # rotate and expand airfoil
             airfoil_poly = []
             rear_airfoil_poly = []
-
-            #桁穴位置を中心に迎角分回転する操作
+            print(self.rib_center)
             for p in airfoil_data:
                 px = (p[0] - self.rib_center) * cmod
                 py = (p[1] - rib_center_camber) * cmod
@@ -599,28 +650,42 @@ class PropDesign():
                 ny = px * math.sin(rot) + py * math.cos(rot)
                 airfoil_poly.append([nx, ny])
 
-            ##オフセット入力部分！
+            # apply offset
             _rib_poly = self.offsetPoly(airfoil_poly, self.rib_offset)
-            #はみ出たところ消す
+            rib_poly = airfoil_poly
+
+            # delete illegal point
             rib_poly = self.delete_out_dat(airfoil_poly, _rib_poly)
 
-            output_rib_data += "BeginPoly;ClosePoly;\n"
+            # scale
+            rib_poly_cm = self.set_scale(rib_poly, _scale)
 
-            for p in rib_poly:
-                output_rib_data += "AddPoint(" + str(p[0]) + "," + str(p[1]) + ");\n"
-            output_rib_data += "EndPoly;\n"
-            #ここまでがリブ外形
-
-
-            #桁穴
-            # 桁穴分の円を一周描く操作
-            output_rib_data += "Arc(" + str(x - hole / 2) + "," + str(-hole/2) + "," + str(x + hole / 2) + "," + str(hole/2) + ",#0,#360);\n"
+            # draw rib
+            line = line_rib_collection.addByTwoPoints(\
+                adsk.core.Point3D.create(rib_poly_cm[0][0], rib_poly_cm[0][1], 0), \
+                adsk.core.Point3D.create(rib_poly_cm[1][0], rib_poly_cm[1][1], 0)\
+            )
+            for p in rib_poly_cm[2:]:
+                line = line_rib_collection.addByTwoPoints(\
+                    line.endSketchPoint,\
+                    adsk.core.Point3D.create(p[0], p[1], 0)\
+                )
+            line = line_rib_collection.addByTwoPoints(\
+                line.endSketchPoint,\
+                adsk.core.Point3D.create(rib_poly_cm[0][0], rib_poly_cm[0][1], 0)\
+            )
+            # beam hole
+            circles = sketch_rib.sketchCurves.sketchCircles
+            circle = circles.addByCenterRadius(adsk.core.Point3D.create(x/_scale, 0, 0), hole/(_scale*2))
+            # leading edge marker
             rib_front = [(-self.rib_center * math.cos(rot) + rib_center_camber * math.sin(rot)) * cmod + x , (-self.rib_center * math.sin(rot) - rib_center_camber * math.cos(rot)) * cmod]
             rib_end = [((1.0 - self.rib_center) * math.cos(rot) + rib_center_camber * math.sin(rot)) * cmod + x , ((1.0 - self.rib_center) * math.sin(rot) - rib_center_camber * math.cos(rot)) * cmod]
-            output_rib_data += "MoveTo(" + str(rib_front[0] + math.cos(rot)) + "," + str(rib_front[1] + math.sin(rot)) + ");\n"
-            output_rib_data += "LineTo(" + str(rib_front[0] + 3.0 * math.cos(rot)) + "," + str(rib_front[1] + 3.0 * math.sin(rot)) + ");\n"
+            line = line_rib_collection.addByTwoPoints(\
+                adsk.core.Point3D.create((rib_front[0] + math.cos(rot)) / _scale, (rib_front[1] + math.sin(rot)) / _scale, 0), \
+                adsk.core.Point3D.create((rib_front[0] + 2.0 * math.cos(rot)) / _scale, (rib_front[1] + 2.0 * math.sin(rot)) / _scale, 0)\
+            )
 
-            #治具幅に対する桁穴%位置と、リブに対する桁穴%位置を一致させるためのoffset
+            # jig
             zig_off = self.zig_wid * self.rib_center
             zig_front_y = min(self.getMaxY(rib_poly) - 8, zig_off)
             zig_end_y = max(self.getMinY(rib_poly) + 8, zig_off - self.zig_wid)
@@ -631,55 +696,80 @@ class PropDesign():
             if len(zig_fr) != 0 and len(zig_en) != 0:
                 zig_front_x = zig_fr[0][0] - x
                 zig_end_x = zig_en[0][0] - x
+                jig = \
+                [
+                    [ zig_print_offset_x - self.keta_hei , zig_print_offset_y + zig_off],
+                    [ zig_print_offset_x - self.keta_hei , zig_print_offset_y + zig_off - self.zig_wid],
+                    [ zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3 , zig_print_offset_y + zig_off - self.zig_wid],
+                    [ zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3 , zig_print_offset_y + zig_off - self.zig_wid - 15],
+                    [ zig_print_offset_x - self.keta_hei + 10 , zig_print_offset_y + zig_off - self.zig_wid - 15],
+                    [ zig_print_offset_x - self.keta_hei + 10 , zig_print_offset_y + zig_end_y - 10],
+                    [ zig_print_offset_x + zig_end_x - 20 if zig_end_x - 20 > - self.keta_hei + 10 else zig_print_offset_x - self.keta_hei + 10, zig_print_offset_y + zig_end_y - 10],
+                    [ zig_print_offset_x + zig_end_x , zig_print_offset_y + zig_end_y],
+                    [ zig_print_offset_x + zig_end_x - 10 , zig_print_offset_y + zig_end_y + 10],
+                    [ zig_print_offset_x - self.keta_hei + 10 , zig_print_offset_y + zig_end_y + 10],
+                    [ zig_print_offset_x - self.keta_hei + 10 , zig_print_offset_y + zig_front_y - 10],
+                    [ zig_print_offset_x + zig_front_x - 10 , zig_print_offset_y + zig_front_y - 10],
+                    [ zig_print_offset_x + zig_front_x , zig_print_offset_y + zig_front_y],
+                    [ zig_print_offset_x + zig_front_x - 20 , zig_print_offset_y + zig_front_y + 10],
+                    [ zig_print_offset_x - self.keta_hei + 10 , zig_print_offset_y + zig_front_y + 10],
+                    [ zig_print_offset_x - self.keta_hei + 10 ,  zig_print_offset_y + zig_off + 15],
+                    [ zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3 , zig_print_offset_y + zig_off + 15],
+                    [ zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3 , zig_print_offset_y + zig_off]
+                ]
+                jig_cm = self.set_scale(jig, _scale)
+                line = line_jig_collection.addByTwoPoints(\
+                    adsk.core.Point3D.create(jig_cm[0][0], jig_cm[0][1], 0), \
+                    adsk.core.Point3D.create(jig_cm[1][0], jig_cm[1][1], 0)\
+                )
+                for j in jig_cm[2:]:
+                    line = line_jig_collection.addByTwoPoints(\
+                        line.endSketchPoint,\
+                        adsk.core.Point3D.create(j[0], j[1], 0)\
+                    )
+                line = line_jig_collection.addByTwoPoints(\
+                    line.endSketchPoint,\
+                    adsk.core.Point3D.create(jig_cm[0][0], jig_cm[0][1], 0)\
+                )
 
-                output_rib_data += "BeginPoly;ClosePoly;\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei) + "," +                      str(zig_print_offset_y + zig_off) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei) + "," +                      str(zig_print_offset_y + zig_off - self.zig_wid) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3) + "," +    str(zig_print_offset_y + zig_off - self.zig_wid) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3) + "," +    str(zig_print_offset_y + zig_off - self.zig_wid - 15) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei + 10) + "," +                 str(zig_print_offset_y + zig_off - self.zig_wid - 15) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei + 10) + "," +                 str(zig_print_offset_y + zig_end_y - 10) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x + zig_end_x - 20 if zig_end_x - 20 > - self.keta_hei + 10 else zig_print_offset_x - self.keta_hei + 10) + ","\
-                                            + str(zig_print_offset_y + zig_end_y - 10) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x + zig_end_x) + "," +                     str(zig_print_offset_y + zig_end_y) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x + zig_end_x - 10) + "," +                str(zig_print_offset_y + zig_end_y + 10) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei + 10) + "," +                 str(zig_print_offset_y + zig_end_y + 10) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei + 10) + "," +                 str(zig_print_offset_y + zig_front_y - 10) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x + zig_front_x - 10) + "," +              str(zig_print_offset_y + zig_front_y - 10) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x + zig_front_x) + "," +                   str(zig_print_offset_y + zig_front_y) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x + zig_front_x - 20) + "," +              str(zig_print_offset_y + zig_front_y + 10) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei + 10 ) + "," +                str(zig_print_offset_y + zig_front_y + 10) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei + 10) + "," +                 str(zig_print_offset_y + zig_off + 15) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3) + "," +    str(zig_print_offset_y + zig_off + 15) + ");\n"
-                output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3) + "," +    str(zig_print_offset_y + zig_off) + ");\n"
-                output_rib_data += "EndPoly;\n"
-                #桁穴中心は(zig_print_offset_x,zig_print_offset_y)
-
-            #桁支持具
+            # beam support
             if rib_number % self.keta_interval == 0:
                     keta_support_offsetY = 500
                     keta_support_hole = (hole + self.hole_center-self.tepa*(x+self.rib_interval))/2
-                    output_rib_data += "BeginPoly;ClosePoly;\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei) + "," + str(keta_support_offsetY + zig_off) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei) + "," + str(keta_support_offsetY + zig_off - self.zig_wid) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3) + "," + str(keta_support_offsetY + zig_off - self.zig_wid) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3) + "," + str(keta_support_offsetY + zig_off - self.zig_wid - 15) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei + 10) + "," + str(keta_support_offsetY + zig_off - self.zig_wid - 15) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei + 10) + "," + str(keta_support_offsetY - 20) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x + keta_support_hole/2) + "," + str(keta_support_offsetY - 20) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x + keta_support_hole/2) + "," + str(keta_support_offsetY - keta_support_hole/2 ) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - keta_support_hole/2) + "," + str(keta_support_offsetY - keta_support_hole/2) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - keta_support_hole/2) + "," + str(keta_support_offsetY + keta_support_hole/2) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x + keta_support_hole/2) + "," + str(keta_support_offsetY + keta_support_hole/2) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x + keta_support_hole/2) + "," + str(keta_support_offsetY + 20) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei + 10) + "," + str(keta_support_offsetY + 20) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei + 10) + "," + str(keta_support_offsetY + zig_off + 15) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3) + "," + str(keta_support_offsetY + zig_off + 15) + ");\n"
-                    output_rib_data += "AddPoint(" + str(zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3) + "," + str(keta_support_offsetY + zig_off) + ");\n"
-                    output_rib_data += "EndPoly;\n"
+                    keta_support = [
+                        [ zig_print_offset_x - self.keta_hei , keta_support_offsetY + zig_off ],
+                        [ zig_print_offset_x - self.keta_hei , keta_support_offsetY + zig_off - self.zig_wid ],
+                        [ zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3 , keta_support_offsetY + zig_off - self.zig_wid ],
+                        [ zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3 , keta_support_offsetY + zig_off - self.zig_wid - 15 ],
+                        [ zig_print_offset_x - self.keta_hei + 10 , keta_support_offsetY + zig_off - self.zig_wid - 15 ],
+                        [ zig_print_offset_x - self.keta_hei + 10 , keta_support_offsetY - 20 ],
+                        [ zig_print_offset_x + keta_support_hole/2 , keta_support_offsetY - 20 ],
+                        [ zig_print_offset_x + keta_support_hole/2 , keta_support_offsetY - keta_support_hole/2  ],
+                        [ zig_print_offset_x - keta_support_hole/2 , keta_support_offsetY - keta_support_hole/2 ],
+                        [ zig_print_offset_x - keta_support_hole/2 , keta_support_offsetY + keta_support_hole/2 ],
+                        [ zig_print_offset_x + keta_support_hole/2 , keta_support_offsetY + keta_support_hole/2 ],
+                        [ zig_print_offset_x + keta_support_hole/2 , keta_support_offsetY + 20 ],
+                        [ zig_print_offset_x - self.keta_hei + 10 , keta_support_offsetY + 20 ],
+                        [ zig_print_offset_x - self.keta_hei + 10 , keta_support_offsetY + zig_off + 15 ],
+                        [ zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3 , keta_support_offsetY + zig_off + 15 ],
+                        [ zig_print_offset_x - self.keta_hei - self.frame_hei * 2 / 3 , keta_support_offsetY + zig_off ]
+                    ]
+            keta_support_cm = self.set_scale(keta_support, _scale)
+            line = line_beamsup_collection.addByTwoPoints(\
+                adsk.core.Point3D.create(keta_support_cm[0][0], keta_support_cm[0][1], 0), \
+                adsk.core.Point3D.create(keta_support_cm[1][0], keta_support_cm[1][1], 0)\
+            )
+            for j in keta_support_cm[2:]:
+                line = line_beamsup_collection.addByTwoPoints(\
+                    line.endSketchPoint,\
+                    adsk.core.Point3D.create(j[0], j[1], 0)\
+                )
+            line = line_beamsup_collection.addByTwoPoints(\
+                line.endSketchPoint,\
+                adsk.core.Point3D.create(keta_support_cm[0][0], keta_support_cm[0][1], 0)\
+            )
 
-
-            #後縁治具
+            # rear jig
             rear_zig_poly_out = self.offsetPoly(airfoil_poly,-10)# offset-10mm
             rear_zig_poly_out = self.delete_in_dat(airfoil_poly,rear_zig_poly_out)
             rear_zig_poly_in = airfoil_poly
@@ -703,36 +793,89 @@ class PropDesign():
             lx = vx*math.cos(math.pi/2)-vy * math.sin(math.pi / 2) #if -vx * math.sin(math.pi / 2)>4.0 else 4.0
             ly = vx*math.sin(math.pi / 2)+vy*math.cos(math.pi/2) #if vy * math.cos(math.pi / 2)>4.0 else 4.0
 
-            output_rib_data += "BeginPoly;ClosePoly;\n"
-            output_rib_data += "AddPoint(" + str(rear_zig_te_x+rear_zig_offset_x) + "," + str(rear_zig_te_y + rear_zig_offset_y) + ");\n"
+
+            rear_jig1 = []
+            rear_jig2 = []
+            rear_jig1.append([rear_zig_te_x+rear_zig_offset_x, rear_zig_te_y + rear_zig_offset_y])
             for p in rear_zig_poly_out[0:int(len(rear_zig_poly_out)*3/5)]:
-                output_rib_data += "AddPoint(" + str(p[0]+rear_zig_offset_x) + "," + str(p[1] + rear_zig_offset_y) + ");\n"
+                rear_jig1.append([p[0]+rear_zig_offset_x, p[1] + rear_zig_offset_y])
             for p in rear_zig_poly_in[int(len(rear_zig_poly_in)*2/5):last_in]:
-                output_rib_data += "AddPoint(" + str(p[0]+rear_zig_offset_x) + "," + str(p[1] + rear_zig_offset_y) + ");\n"
-            output_rib_data += "EndPoly;\n"
-
-            output_rib_data += "BeginPoly;ClosePoly;\n"
+                rear_jig1.append([p[0]+rear_zig_offset_x, p[1] + rear_zig_offset_y])
             for p in rear_zig_poly_out[int(len(rear_zig_poly_out)*2/5):last_out-1]:
-                output_rib_data += "AddPoint(" + str(p[0]+rear_zig_offset_x) + "," + str(p[1] + rear_zig_offset_y) + ");\n"
-            output_rib_data += "AddPoint(" + str(rear_zig_te_x+rear_zig_offset_x) + "," + str(rear_zig_te_y + rear_zig_offset_y) + ");\n"
-
+                rear_jig2.append([p[0]+rear_zig_offset_x, p[1] + rear_zig_offset_y])
+            rear_jig2.append([rear_zig_te_x+rear_zig_offset_x, rear_zig_te_y + rear_zig_offset_y])
             for p in rear_zig_poly_in[0:int(len(rear_zig_poly_in)*3/5)]:
-                output_rib_data += "AddPoint(" + str(p[0] + rear_zig_offset_x) + "," + str(p[1] + rear_zig_offset_y) + ");\n"
-            output_rib_data += "EndPoly;\n"
+                rear_jig2.append([p[0] + rear_zig_offset_x, p[1] + rear_zig_offset_y])
+            rear_jig_cut2 = \
+            [
+                [rear_zig_poly_in[last_in-1][0] +  rear_zig_offset_x, rear_zig_poly_in[last_in-1][1] + rear_zig_offset_y],
+                [rear_zig_poly_in[last_in-1][0] + vx+lx + rear_zig_offset_x, rear_zig_poly_in[last_in-1][1] + vy+ly + rear_zig_offset_y],
+                [rear_zig_poly_in[last_in-1][0] + 2*vx + rear_zig_offset_x,rear_zig_poly_in[last_in-1][1] + 2*vy + rear_zig_offset_y]
+            ]
+            rear_jig_cut1 = \
+            [
+                [rear_zig_poly_in[last_in-1][0] + rear_zig_offset_x , rear_zig_poly_in[last_in-1][1] + rear_zig_offset_y],
+                [rear_zig_poly_in[last_in-1][0] + vx-lx + rear_zig_offset_x , rear_zig_poly_in[last_in-1][1] + vy-ly + rear_zig_offset_y],
+                [rear_zig_poly_in[last_in-1][0] + 2*vx + rear_zig_offset_x , rear_zig_poly_in[last_in-1][1] + 2*vy + rear_zig_offset_y]
+            ]
 
-            output_rib_data += "BeginPoly;ClosePoly;\n"
-            output_rib_data += "AddPoint(" + str(rear_zig_poly_in[last_in-1][0] +  rear_zig_offset_x) + "," + str(rear_zig_poly_in[last_in-1][1] + rear_zig_offset_y) + ");\n"
-            output_rib_data += "AddPoint(" + str(rear_zig_poly_in[last_in-1][0] + vx+lx + rear_zig_offset_x) + "," + str(rear_zig_poly_in[last_in-1][1] + vy+ly + rear_zig_offset_y) + ");\n"
-            output_rib_data += "AddPoint(" + str(rear_zig_poly_in[last_in-1][0] + 2*vx + rear_zig_offset_x) + "," + str(rear_zig_poly_in[last_in-1][1] + 2*vy + rear_zig_offset_y) + ");\n"
-            output_rib_data += "EndPoly;\n"
+            rear_jig1_cm = self.set_scale(rear_jig1, _scale)
+            rear_jig2_cm = self.set_scale(rear_jig2, _scale)
+            rear_jig_cut1_cm = self.set_scale(rear_jig_cut1, _scale)
+            rear_jig_cut2_cm = self.set_scale(rear_jig_cut2, _scale)
 
-            output_rib_data += "BeginPoly;ClosePoly;\n"
-            output_rib_data += "AddPoint(" + str(rear_zig_poly_in[last_in-1][0] + rear_zig_offset_x) + "," + str(rear_zig_poly_in[last_in-1][1] + rear_zig_offset_y) + ");\n"
-            output_rib_data += "AddPoint(" + str(rear_zig_poly_in[last_in-1][0] + vx-lx + rear_zig_offset_x) + "," + str(rear_zig_poly_in[last_in-1][1] + vy-ly + rear_zig_offset_y) + ");\n"
-            output_rib_data += "AddPoint(" + str(rear_zig_poly_in[last_in-1][0] + 2*vx + rear_zig_offset_x) + "," + str(rear_zig_poly_in[last_in-1][1] + 2*vy + rear_zig_offset_y) + ");\n"
-            output_rib_data += "EndPoly;\n"
-
-
+            line = line_rear1_collection.addByTwoPoints(\
+                    adsk.core.Point3D.create(rear_jig1_cm[0][0], rear_jig1_cm[0][1], 0), \
+                    adsk.core.Point3D.create(rear_jig1_cm[1][0], rear_jig1_cm[1][1], 0)\
+                )
+            for j in rear_jig1_cm[2:]:
+                line = line_rear1_collection.addByTwoPoints(\
+                    line.endSketchPoint,\
+                    adsk.core.Point3D.create(j[0], j[1], 0)\
+                )
+            line = line_rear1_collection.addByTwoPoints(\
+                line.endSketchPoint,\
+                adsk.core.Point3D.create(rear_jig1_cm[0][0], rear_jig1_cm[0][1], 0)\
+            )
+            line = line_rear1_collection.addByTwoPoints(\
+                    adsk.core.Point3D.create(rear_jig_cut1_cm[0][0], rear_jig_cut1_cm[0][1], 0), \
+                    adsk.core.Point3D.create(rear_jig_cut1_cm[1][0], rear_jig_cut1_cm[1][1], 0)\
+                )
+            for j in rear_jig_cut1_cm[2:]:
+                line = line_rear1_collection.addByTwoPoints(\
+                    line.endSketchPoint,\
+                    adsk.core.Point3D.create(j[0], j[1], 0)\
+                )
+            line = line_rear1_collection.addByTwoPoints(\
+                line.endSketchPoint,\
+                adsk.core.Point3D.create(rear_jig_cut1_cm[0][0], rear_jig_cut1_cm[0][1], 0)\
+            )
+            line = line_rear2_collection.addByTwoPoints(\
+                    adsk.core.Point3D.create(rear_jig2_cm[0][0], rear_jig2_cm[0][1], 0), \
+                    adsk.core.Point3D.create(rear_jig2_cm[1][0], rear_jig2_cm[1][1], 0)\
+                )
+            for j in rear_jig2_cm[2:]:
+                line = line_rear2_collection.addByTwoPoints(\
+                    line.endSketchPoint,\
+                    adsk.core.Point3D.create(j[0], j[1], 0)\
+                )
+            line = line_rear2_collection.addByTwoPoints(\
+                line.endSketchPoint,\
+                adsk.core.Point3D.create(rear_jig2_cm[0][0], rear_jig2_cm[0][1], 0)\
+            )
+            line = line_rear2_collection.addByTwoPoints(\
+                    adsk.core.Point3D.create(rear_jig_cut2_cm[0][0], rear_jig_cut2_cm[0][1], 0), \
+                    adsk.core.Point3D.create(rear_jig_cut2_cm[1][0], rear_jig_cut2_cm[1][1], 0)\
+                )
+            for j in rear_jig_cut2_cm[2:]:
+                line = line_rear2_collection.addByTwoPoints(\
+                    line.endSketchPoint,\
+                    adsk.core.Point3D.create(j[0], j[1], 0)\
+                )
+            line = line_rear2_collection.addByTwoPoints(\
+                line.endSketchPoint,\
+                adsk.core.Point3D.create(rear_jig_cut2_cm[0][0], rear_jig_cut2_cm[0][1], 0)\
+            )
 
             #後縁支持具
             rear1 = self.getFromY(rib_poly, self.rib_rear)
@@ -771,9 +914,17 @@ class PropDesign():
                     last_rearR = -1
                     last_rearL = -1
 
-
             x += self.rib_interval
             rib_number += 1
+            break
+
+            # Update progress value of progress dialog
+            progressDialog.progressValue = rib_number + 1
+
+        # Hide the progress dialog at the end.
+        progressDialog.hide()
+
+
 # Global set of event handlers to keep them referenced for the duration of the command
 _handlers = []
 _prop = PropDesign()
@@ -817,7 +968,7 @@ class MyCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
         super().__init__()
     def notify(self, args):
         try:
-            global _prop
+            global _prop, _scale
             eventArgs = adsk.core.InputChangedEventArgs.cast(args)
             inputs = eventArgs.inputs
             cmdInput = eventArgs.input
@@ -838,9 +989,9 @@ class MyCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                         elif input.id == 'sub_foil_path':
                             _prop.sub_foil_path = input.value
                         elif input.id == 'rib_start':
-                            _prop.rib_start = input.value
+                            _prop.rib_start = input.value * _scale
                         elif input.id == 'rib_interval':
-                            _prop.rib_interval = input.value
+                            _prop.rib_interval = input.value * _scale
                         elif input.id == 'rib_center':
                             _prop.rib_center = float(input.value)
                         elif input.id == 'beam_support_interval':
@@ -848,13 +999,13 @@ class MyCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                         elif input.id == 'beam_tepa':
                             _prop.tepa = float(input.value)
                         elif input.id == 'hole_center':
-                            _prop.hole_center = input.value
+                            _prop.hole_center = input.value * _scale
                         elif input.id == 'beam_height':
-                            _prop.keta_hei = input.value
+                            _prop.keta_hei = input.value * _scale
                         elif input.id == 'jig_width':
-                            _prop.zig_wid = input.value
+                            _prop.zig_wid = input.value * _scale
                         elif input.id == 'frame_height':
-                            _prop.frame_hei = input.value
+                            _prop.frame_hei = input.value * _scale
 
                 elif cmdInput.parentCommandInput.id == 'table':
                     tableInput = inputs.itemById('table')
@@ -865,15 +1016,15 @@ class MyCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                             _ui.messageBox('Select one row to delete.')
                         else:
                             tableInput.deleteRow(tableInput.selectedRow)
+                    _prop.airfoil_mix_number = []
                     _prop.airfoil_mix_ratio = []
-                    _prop.airfoil_mix_ratio = []
-                    for r in range(tableInput.rowCount):
-                        _prop.airfoil_mix_ratio.append(tableInput.getInputAtPosition(r, 0))
-                        _prop.airfoil_mix_number.append(tableInput.getInputAtPosition(r, 1))
+                    for r in range(1,tableInput.rowCount):
+                        _prop.airfoil_mix_number.append(int(tableInput.getInputAtPosition(r, 0).value))
+                        _prop.airfoil_mix_ratio.append(float(tableInput.getInputAtPosition(r, 1).value))
 
                 elif cmdInput.parentCommandInput.id == 'tab_3':
                     if cmdInput.id == 'build':
-                        _ui.messageBox(str(_prop.frame_hei))
+                        _prop.build()
 
 
 
@@ -941,10 +1092,10 @@ class MyCommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
             tab1ChildInputs.addBoolValueInput('import_sub', 'import_sub', False, '', True)
 
             # Create value input.
-            rib_start_input = tab1ChildInputs.addValueInput('rib_start', 'hub_radius', 'mm', adsk.core.ValueInput.createByReal(_prop.rib_start))
+            rib_start_input = tab1ChildInputs.addValueInput('rib_start', 'hub_radius', 'mm', adsk.core.ValueInput.createByReal(_prop.rib_start / _scale))
 
             # Create value input.
-            rib_interval_input = tab1ChildInputs.addValueInput('rib_interval', 'rib_interval', 'mm', adsk.core.ValueInput.createByReal(_prop.rib_interval))
+            rib_interval_input = tab1ChildInputs.addValueInput('rib_interval', 'rib_interval', 'mm', adsk.core.ValueInput.createByReal(_prop.rib_interval / _scale))
 
             # Create value input.
             rib_center_input = tab1ChildInputs.addStringValueInput('rib_center', 'rib_center', str(_prop.rib_center))
@@ -956,16 +1107,16 @@ class MyCommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
             beam_tepa_input = tab1ChildInputs.addStringValueInput('beam_tepa', 'beam_tepa', str(_prop.tepa))
 
             # Create value input.
-            hole_center_input = tab1ChildInputs.addValueInput('hole_center', 'hole_center', 'mm', adsk.core.ValueInput.createByReal(_prop.hole_center))
+            hole_center_input = tab1ChildInputs.addValueInput('hole_center', 'hole_center', 'mm', adsk.core.ValueInput.createByReal(_prop.hole_center / _scale))
 
             # Create value input.
-            beam_height_input = tab1ChildInputs.addValueInput('beam_height', 'beam_height', 'mm', adsk.core.ValueInput.createByReal(_prop.keta_hei))
+            beam_height_input = tab1ChildInputs.addValueInput('beam_height', 'beam_height', 'mm', adsk.core.ValueInput.createByReal(_prop.keta_hei / _scale))
 
             # Create value input.
-            jig_width_input = tab1ChildInputs.addValueInput('jig_width', 'jig_width', 'mm', adsk.core.ValueInput.createByReal(_prop.zig_wid))
+            jig_width_input = tab1ChildInputs.addValueInput('jig_width', 'jig_width', 'mm', adsk.core.ValueInput.createByReal(_prop.zig_wid / _scale))
 
             # Create value input.
-            frame_height_input = tab1ChildInputs.addValueInput('frame_height', 'frame_height', 'mm', adsk.core.ValueInput.createByReal(_prop.frame_hei))
+            frame_height_input = tab1ChildInputs.addValueInput('frame_height', 'frame_height', 'mm', adsk.core.ValueInput.createByReal(_prop.frame_hei / _scale))
 
             # Create tab input 2
             tabCmdInput2 = inputs.addTabCommandInput('tab_2', 'mix foil')
