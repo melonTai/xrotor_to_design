@@ -3,7 +3,7 @@
 -----------
 # 概要
 このレポジトリに、プロペラ設計を補助するスクリプトをまとめました。
-- ~xrot_to_vs : [xrotor](http://web.mit.edu/drela/Public/web/xrotor/)によるプロペラ設計ファイルから自動図面化(VectorScript)~スクリプトは手渡し
+- ~xrot_to_vs : [xrotor](http://web.mit.edu/drela/Public/web/xrotor/)によるプロペラ設計ファイルから自動図面化(VectorScript)~ スクリプトは手渡し
 - xrot_to_fusion_sketch : [xrotor](http://web.mit.edu/drela/Public/web/xrotor/)によるプロペラ設計ファイルから[fusion360](https://www.autodesk.co.jp/products/fusion-360/overview)で図面のスケッチ生成、UI有り
 - xflr_to_xrot : [xflr5](http://www.xflr5.tech/xflr5.htm)の翼型解析を[xrotor](http://web.mit.edu/drela/Public/web/xrotor/)のaeroファイルに自動変換
 
