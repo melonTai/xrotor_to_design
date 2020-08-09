@@ -78,7 +78,7 @@ buildボタンを押すと入力に応じた図面が出力されます。
 
 ![progress](./picture/progress.jpg)
 
-↓optionにrib、morise、tenonを指定した時の出力
+↓optionにrib、mortise、tenonを指定した時の出力
 
 ![output_example](./picture/rib_tenon_mortise_output.jpg)
 ## xrot_to_vs
