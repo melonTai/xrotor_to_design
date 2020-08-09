@@ -44,7 +44,7 @@ fusion360を開きアドインをクリックします。
 - rib_center : 桁穴を通す位置(百分率)
 - beam_support_interval : 桁の支柱をリブ何個ごとに配置するか
 - beam_tepa : 桁のテーパ
-- hole_center : 桁を回転中心まで伸ばすと仮定したときの、桁直径
+- hole_center : 桁を回転中心まで伸ばしたときの桁直径
 - beam_height : 桁を支える高さ
 - jig_width : 治具の幅(土台の横幅)
 - frame_height : 土台の縦幅
