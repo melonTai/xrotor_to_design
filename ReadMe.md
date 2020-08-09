@@ -2,7 +2,7 @@
 # プロペラ設計補助ツール
 -----------
 # 概要
-このレポジトリに、プロペラ設計を補助するスクリプトをまとめた。
+このレポジトリに、プロペラ設計を補助するスクリプトをまとめました。
 - xrot_to_vs : [xrotor](http://web.mit.edu/drela/Public/web/xrotor/)によるプロペラ設計ファイルから自動図面化(VectorScript)
 - xrot_to_fusion_sketch : [xrotor](http://web.mit.edu/drela/Public/web/xrotor/)によるプロペラ設計ファイルから[fusion360](https://www.autodesk.co.jp/products/fusion-360/overview)でスケッチ生成、UI有り
 - aero_for_xrot : [xflr5](http://www.xflr5.tech/xflr5.htm)の翼型解析を[xrotor](http://web.mit.edu/drela/Public/web/xrotor/)のaeroファイルに自動変換
@@ -15,12 +15,12 @@
 
 このフォルダは、私の場合`C:\Users\AccoutName\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\Scripts`に入ってました。
 #### 手順2
-fusion360を開きアドインをクリック
+fusion360を開きアドインをクリックします。
 
 ![toolbar_addins](./picture/toolbar_addins.png)
 
 #### 手順3
-手順1で入れたスクリプト`xrot_to_fusion_sketch`が反映されているので、選択して実行ボタンをクリック
+手順1で入れたスクリプト`xrot_to_fusion_sketch`が反映されているので、選択して実行ボタンをクリックします。
 
 ![script](./picture/script_and_addins.png)
 
@@ -55,7 +55,7 @@ fusion360を開きアドインをクリック
 
 rib numberに指定したリブ番号については、\
 main_foil : sub_foil = 1 - sub mix ratio : sub mix ratio\
-の割合で混合される。
+の割合で混合されます。
 
 - rib number : sub_foilを混合するリブ番号
 - sub mix ratio : sub_foilの混合する割合(%)
@@ -89,6 +89,6 @@ frame_hei = 80
 #--------------------------------入力終了--------------------------------
 #=======================================================================
 ```
-を書き換えて使用する
+を書き換えて使用します。
 ## aero_for_xrot
 準備中
