@@ -73,6 +73,14 @@ main_foil : sub_foil = 1 - sub mix ratio : sub mix ratio\
 ![build](./picture/input_build.png)
 
 buildボタンを押すと入力に応じた図面が出力されます。
+
+↓図面出力中画面
+
+![progress](./picture/progress.jpg)
+
+↓optionにrib、morise、tenonを指定した時の出力
+
+![output_example](./picture/rib_tenon_mortise_output.jpg)
 ## xrot_to_vs
 プログラム先頭の
 ```
