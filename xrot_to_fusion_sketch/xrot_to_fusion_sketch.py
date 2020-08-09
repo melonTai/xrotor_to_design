@@ -9,7 +9,7 @@ _rowNumber = 0
 _scale = 10
 class PropDesign():
     def __init__(self):
-
+        
         # リブのオフセット(バルサの場合、外皮の厚み分)[mm]
         self.rib_offset = 1
         # 設計ファイル読み込み(xrotorのrestartfile)
@@ -511,7 +511,7 @@ class PropDesign():
             return self.removeCross(r)
         else:
             return r
-
+    
     def set_scale(self,ps,scale):
         return [[p[0] / scale, p[1] / scale] for p in ps]
 
@@ -623,7 +623,7 @@ class PropDesign():
             #mix = 0
             airfoil_data = self.interpolate_dat([sub_foil,main_foil],[mix,1-mix])
             rib_center_camber = self.getCenterThickness(airfoil_data, self.rib_center)
-
+            
             # rotate and expand airfoil
             airfoil_poly = []
             rear_airfoil_poly = []
@@ -643,8 +643,8 @@ class PropDesign():
             rib_poly = self.delete_out_dat(airfoil_poly, _rib_poly)
 
             # scale
-            rib_poly_cm = self.set_scale(rib_poly, _scale)
-
+            rib_poly_cm = self.set_scale(rib_poly, _scale) 
+            
             if self.check[0]:
                 # draw rib
                 sketch_rib_collections.append(rootComp.sketches.add(rootComp.xYConstructionPlane))
@@ -675,7 +675,7 @@ class PropDesign():
                 #    entities.add(line)
                 design.deleteEntities(rib_curves)
                 """
-
+                
                 # beam hole
                 sketch_rib_hole_collections.append(rootComp.sketches.add(rootComp.xYConstructionPlane))
                 sketch_rib_hole = sketch_rib_hole_collections[-1]
@@ -694,7 +694,7 @@ class PropDesign():
                     adsk.core.Point3D.create((rib_front[0] + math.cos(rot)) / _scale, (rib_front[1] + math.sin(rot)) / _scale, 0), \
                     adsk.core.Point3D.create((rib_front[0] + 2.0 * math.cos(rot)) / _scale, (rib_front[1] + 2.0 * math.sin(rot)) / _scale, 0)\
                 )
-
+            
             # jig
             if self.check[1]:
                 zig_off = self.zig_wid * self.rib_center
@@ -838,7 +838,7 @@ class PropDesign():
                     [rear_zig_poly_in[last_in-1][0] + vx-lx + rear_zig_offset_x , rear_zig_poly_in[last_in-1][1] + vy-ly + rear_zig_offset_y],
                     [rear_zig_poly_in[last_in-1][0] + 2*vx + rear_zig_offset_x , rear_zig_poly_in[last_in-1][1] + 2*vy + rear_zig_offset_y]
                 ]
-
+                
                 rear_jig1_cm = self.set_scale(rear_jig1, _scale)
                 rear_jig2_cm = self.set_scale(rear_jig2, _scale)
                 rear_jig_cut1_cm = self.set_scale(rear_jig_cut1, _scale)
@@ -915,7 +915,7 @@ class PropDesign():
                 #print("hei")
                 rearL = max(rear1[0][0], rear2[0][0])
                 rearR = min(rear1[1][0], rear2[1][0])
-                if(rearR - rearL > 7 and self.check[4]):
+                if(rearR - rearL > 7 and self.check[4]):     
                     mortise = \
                     [
                         [ rearL + 3 , self.rib_rear ],
@@ -928,10 +928,10 @@ class PropDesign():
                     mortise_cm = self.set_scale(mortise, _scale)
                     sketch_mortise_collections.append(rootComp.sketches.add(rootComp.xYConstructionPlane))
                     sketch_mortise = sketch_mortise_collections[-1]
-                    sketch_mortise.name = 'mortise{}'.format(rib_number)
+                    sketch_mortise.name = 'mortise{}'.format(rib_number) 
                     line_mortise_collections.append(sketch_mortise.sketchCurves.sketchLines)
                     line_mortise_collection = line_mortise_collections[-1]
-
+                    
                     line = line_mortise_collection.addByTwoPoints(\
                     adsk.core.Point3D.create(mortise_cm[0][0], mortise_cm[0][1], 0), \
                     adsk.core.Point3D.create(mortise_cm[1][0], mortise_cm[1][1], 0)\
@@ -987,16 +987,16 @@ class PropDesign():
                 else:
                     last_rearR = -1
                     last_rearL = -1
-
+            
             x += self.rib_interval
             rib_number += 1
             # Update progress value of progress dialog
             progressDialog.progressValue = rib_number + 1
-
+            
         # Hide the progress dialog at the end.
         progressDialog.hide()
 
-
+            
 # Global set of event handlers to keep them referenced for the duration of the command
 _handlers = []
 _prop = PropDesign()
@@ -1111,7 +1111,7 @@ class MyCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                     if cmdInput.id == 'build':
                         _prop.build()
                         #_ui.messageBox(str(_prop.check))
-
+                        
 
 
 
@@ -1259,9 +1259,9 @@ def run(context):
         _ui = _app.userInterface
 
         # Get the existing command definition or create it if it doesn't already exist.
-        cmdDef = _ui.commandDefinitions.itemById('cmdInputsSample')
+        cmdDef = _ui.commandDefinitions.itemById('xrotToFusionSketch')
         if not cmdDef:
-            cmdDef = _ui.commandDefinitions.addButtonDefinition('cmdInputsSample', 'Command Inputs Sample', 'Sample to demonstrate various command inputs.')
+            cmdDef = _ui.commandDefinitions.addButtonDefinition('xrotToFusionSketch', 'xrot to fusionsketch', 'Sample to demonstrate various command inputs.')
 
         # Connect to the command created event.
         onCommandCreated = MyCommandCreatedHandler()
