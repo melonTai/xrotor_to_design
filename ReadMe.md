@@ -67,6 +67,7 @@ main_foil : sub_foil = 1 - sub mix ratio : sub mix ratio\
 - rear jig : 後縁治具
 - mortise : ほぞ穴
 - tenon : ほぞ
+
 チェックを入れたパーツのみが出力されます。
 ### 実行
 ![build](./picture/input_build.png)
