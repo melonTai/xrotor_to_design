@@ -37,7 +37,7 @@ fusion360を開きアドインをクリックします。
 ![param](./picture/input_param.png)
 - xrotor_restartfile : xrotorのsaveコマンドで得られる設計ファイル(restartfile)
 - main_foil_path : ペラ中央に使う翼型のdatファイルパス
-- sub_foil_path : ペラ根、端で使う翼型のdatファイルパス
+- sub_foil_path : ペラ根、端で使う翼型のdatファイルパス\
 上記3つは下のimportボダンで参照可能
 - hub_radius : ハブ半径[mm]
 - rib_interval : リブ間隔[mm]
