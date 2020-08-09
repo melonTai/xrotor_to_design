@@ -50,6 +50,7 @@ fusion360を開きアドインをクリック
 - frame_height : 土台の縦幅
 #### mix foil
 ![mix_foil](./picture/input_mix.png)
+
 指定がなければ、main_foil_pathに指定した翼型のみで出力される。
 
 rib numberに指定したリブ番号については、\\
