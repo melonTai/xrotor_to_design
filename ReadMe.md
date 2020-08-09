@@ -70,6 +70,7 @@ main_foil : sub_foil = 1 - sub mix ratio : sub mix ratio\\
 チェックを入れたパーツのみが出力されます。
 ### 実行
 ![build](./picture/input_build.png)
+
 buildボタンを押すと入力に応じた図面が出力されます。
 ## xrot_to_vs
 プログラム先頭の
