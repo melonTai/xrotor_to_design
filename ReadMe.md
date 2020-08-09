@@ -53,7 +53,7 @@ fusion360を開きアドインをクリック
 
 指定がなければ、main_foil_pathに指定した翼型のみで出力される。
 
-rib numberに指定したリブ番号については、\\
+rib numberに指定したリブ番号については、\
 main_foil : sub_foil = 1 - sub mix ratio : sub mix ratio\\
 の割合で混合される。
 
