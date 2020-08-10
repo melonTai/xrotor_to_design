@@ -11,7 +11,6 @@
 ### 準備
 #### 手順1
 `Autodesk Fusion 360\API\Scripts`フォルダの中に`xrot_to_fusion_sketch`フォルダを貼り付けます。
-
 このフォルダは、私の場合`C:\Users\AccoutName\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\Scripts`に入ってました。
 
 スクリプトを初めて利用する人は、`API\Scripts`フォルダーが無い可能性があります。その場合、適当なスクリプトを作ることでフォルダーが出現します。右クリックからそのファイルの場所を開くとフォルダを見つけやすいです。詳しくは、以下GIFを参照してください。
@@ -54,10 +53,10 @@ fusion360を開きアドインをクリックします。
 #### mix foil
 ![mix_foil](./picture/input_mix.png)
 
-指定がなければ、main_foil_pathに指定した翼型のみで出力される。
+指定がなければ、main_foil_pathに指定した翼型のみで出力されます。
 
 rib numberに指定したリブ番号については、\
-main_foil : sub_foil = 1 - sub mix ratio : sub mix ratio\
+main_foil : sub_foil = 100 - sub mix ratio : sub mix ratio\
 の割合で混合されます。
 
 - rib number : sub_foilを混合するリブ番号
