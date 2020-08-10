@@ -14,7 +14,7 @@
 
 このフォルダは、私の場合`C:\Users\AccoutName\AppData\Roaming\Autodesk\Autodesk Fusion 360\API\Scripts`に入ってました。
 
-スクリプトを初めて利用する人は、`API\Scripts`フォルダーが無い可能性があるので、適当なスクリプトを作って、右クリックからファイルの場所を開くとフォルダが見つかります。以下にスクリプトの作り方のGIFを示します
+スクリプトを初めて利用する人は、`API\Scripts`フォルダーが無い可能性があるので、適当なスクリプトを作って、右クリックからファイルの場所を開くとフォルダが見つかります。以下GIFを参照してください。
 
 ![api_folder](./picture/api_folder.gif)
 #### 手順2
