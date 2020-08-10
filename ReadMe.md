@@ -42,15 +42,28 @@ fusion360を開きアドインをクリックします。
 - main_foil_path : ペラ中央に使う翼型のdatファイルパス
 - sub_foil_path : ペラ根、端で使う翼型のdatファイルパス\
 上記3つは下のimportボダンで参照可能
-- hub_radius : ハブ半径[mm]
-- rib_interval : リブ間隔[mm]
-- rib_center : 桁穴を通す位置(百分率)
-- beam_support_interval : 桁の支柱をリブ何個ごとに配置するか
-- beam_tepa : 桁のテーパ
-- hole_center : 桁を回転中心まで伸ばしたときの桁直径
-- beam_height : 桁を支える高さ
-- jig_width : 治具の幅(土台の横幅)
-- frame_height : 土台の縦幅
+- hub_radius : ハブ半径[mm]\(図1参照\)
+- rib_interval : リブ間隔[mm]\(図3参照\)
+- rib_center : 桁穴を通す位置(百分率)(図4参照)
+- beam_support_interval : 桁の支柱をリブ何個ごとに配置するか(図3参照。図3の場合6)
+- beam_tepa : 桁のテーパ(図2参照)
+- hole_center : 桁を回転中心まで伸ばしたときの桁直径(図2参照)
+- beam_height : 桁を支える高さ(図3参照)
+- jig_width : 治具の幅(土台の横幅)(図3参照)
+- frame_height : 土台の縦幅(図3参照)
+
+各パラメータは以下図参照
+
+|![propeller](./picture/propeller.jpg)|
+|:----:|
+|図1:hub radius|
+|![beam](./picture/beam.jpg)|
+|図2:beam|
+|![jig_views](./picture/jig_views.jpg)|
+|図3:jig views|
+|![rib_center](./picture/rib_center.jpg)|
+|図4:rib center|
+
 #### mix foil
 ![mix_foil](./picture/input_mix.png)
 
@@ -84,6 +97,9 @@ buildボタンを押すと入力に応じた図面が出力されます。
 ↓optionにrib、mortise、tenonを指定した時の出力
 
 ![output_example](./picture/rib_tenon_mortise_output.jpg)
+
+### 実行例
+
 ## xrot_to_vs
 プログラム先頭の
 ```
