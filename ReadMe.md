@@ -2,9 +2,9 @@
 # プロペラ設計 図面化スクリプト
 -----------
 # 概要
-このレポジトリに、プロペラ設計を図面化するスクリプトをまとめました。
-- ~xrot_to_vs : [xrotor](http://web.mit.edu/drela/Public/web/xrotor/)によるプロペラ設計ファイルから自動図面化(VectorScript)~ スクリプトは手渡し
-- xrot_to_fusion_sketch : [xrotor](http://web.mit.edu/drela/Public/web/xrotor/)によるプロペラ設計ファイルから[fusion360](https://www.autodesk.co.jp/products/fusion-360/overview)で図面のスケッチ生成、UI有り
+xrot_to_fusion_sketchは[xrotor](http://web.mit.edu/drela/Public/web/xrotor/)によるプロペラ設計ファイルから[fusion360](https://www.autodesk.co.jp/products/fusion-360/overview)で図面のスケッチを生成するスクリプトです。fusion360のapiとpythonによって実装しています。以下デモ動画です。
+
+![demo](./picture/demo2.gif)
 
 # 使い方
 ## xrot_to_fusion_sketch
@@ -75,7 +75,17 @@ main_foil : sub_foil = 100 - sub mix ratio : sub mix ratio\
 
 - rib number : sub_foilを混合するリブ番号
 - sub mix ratio : sub_foilの混合する割合(%)
+
+##### 例
+- 0番リブでmain : sub = 0 : 100
+- 5番リブでmain : sub = 50 : 50
+
+にするときの設定
+
+![demo_mix](./picture/demo_mix.png)
+
 #### option
+
 ![option](./picture/input_option.png)
 - rib : リブ
 - jig : 治具
@@ -98,8 +108,6 @@ buildボタンを押すと入力に応じた図面が出力されます。
 
 ![output_example](./picture/rib_tenon_mortise_output.jpg)
 
-### 実行例
-
 ## xrot_to_vs
 プログラム先頭の
 ```
@@ -117,5 +125,8 @@ frame_hei = 80
 #=======================================================================
 ```
 を書き換えて使用します。
+
+入力内容はxrot_to_fusion_sketchと同じです。
+
 ## aero_for_xrot
 準備中
