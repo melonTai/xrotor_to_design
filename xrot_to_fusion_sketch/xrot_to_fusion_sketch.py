@@ -7,6 +7,8 @@ _app = None
 _ui  = None
 _rowNumber = 0
 _scale = 10
+
+
 class PropDesign():
     def __init__(self):
 
@@ -637,13 +639,12 @@ class PropDesign():
 
             # apply offset
             _rib_poly = self.offsetPoly(airfoil_poly, self.rib_offset)
-            rib_poly = airfoil_poly
 
             # delete illegal point
             rib_poly = self.delete_out_dat(airfoil_poly, _rib_poly)
 
             # scale
-            rib_poly_cm = self.set_scale(rib_poly, _scale)
+            rib_poly_cm = self.set_scale(airfoil_poly, _scale)
 
             if self.check[0]:
                 # draw rib
@@ -666,7 +667,7 @@ class PropDesign():
                     line.endSketchPoint,\
                     adsk.core.Point3D.create(rib_poly_cm[0][0], rib_poly_cm[0][1], 0)\
                 )
-                """
+
                 rib_curves = sketch_rib.findConnectedCurves(line)
                 rib_offsetted = sketch_rib.offset(rib_curves, adsk.core.Point3D.create(x / _scale, 0, 0), self.rib_offset / _scale)
                 design = adsk.fusion.Design.cast(_app.activeProduct)
@@ -674,7 +675,7 @@ class PropDesign():
                 #for line in line_rib_collection:
                 #    entities.add(line)
                 design.deleteEntities(rib_curves)
-                """
+
 
                 # beam hole
                 sketch_rib_hole_collections.append(rootComp.sketches.add(rootComp.xYConstructionPlane))
@@ -1079,6 +1080,8 @@ class MyCommandInputChangedHandler(adsk.core.InputChangedEventHandler):
                             _prop.rib_interval = input.value * _scale
                         elif input.id == 'rib_center' and is_float(input.value):
                             _prop.rib_center = float(input.value)
+                        elif input.id == 'rib_offset':
+                            _prop.rib_offset = input.value * _scale
                         elif input.id == 'beam_support_interval' and is_int(input.value):
                             _prop.keta_interval = int(input.value)
                         elif input.id == 'beam_tepa' and is_float(input.value):
@@ -1204,6 +1207,9 @@ class MyCommandCreatedHandler(adsk.core.CommandCreatedEventHandler):
 
             # Create value input.
             rib_center_input = tab1ChildInputs.addStringValueInput('rib_center', 'rib_center', str(_prop.rib_center))
+
+            # Create value input.
+            rib_offset_input = tab1ChildInputs.addValueInput('rib_offset', 'rib_offset', 'mm', adsk.core.ValueInput.createByReal(_prop.rib_offset / _scale))
 
             # Create value input.
             beam_support_interval_input = tab1ChildInputs.addStringValueInput('beam_support_interval', 'beam_support_interval', str(_prop.keta_interval))
