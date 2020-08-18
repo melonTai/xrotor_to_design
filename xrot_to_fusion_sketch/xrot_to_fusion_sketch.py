@@ -276,8 +276,12 @@ class PropDesign():
         """
         a = [p2[0] - p1[0], p2[1] - p1[1]]
         b = [p4[0] - p3[0], p4[1] - p3[1]]
+        c = [p3[0]-p1[0],p3[1]-p1[1]]
+        absb = (b[0]**2 + b[1]**2)**0.5
+        m = self.cross(b, c)/absb
+        n = self.cross(b, a)/absb
 
-        return [p1[0] + b[0] * self.cross(b,[p3[0]-p1[0],p3[1]-p1[1]])/self.cross(b, a) , p1[1] + b[1] * self.cross(b,[p3[0]-p1[0],p3[1]-p1[1]])/self.cross(b, a)]
+        return [p1[0] + b[0] * m / (m + n) , p1[1] + b[1] * m / (m + n)]
 
     def removeCross(self,ps):
         """
