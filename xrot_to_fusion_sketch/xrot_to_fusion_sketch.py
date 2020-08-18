@@ -281,7 +281,7 @@ class PropDesign():
         m = self.cross(b, c)/absb
         n = self.cross(b, a)/absb
 
-        return [p1[0] + b[0] * m / (m + n) , p1[1] + b[1] * m / (m + n)]
+        return [p3[0] + b[0] * m / (m + n) , p3[1] + b[1] * m / (m + n)]
 
     def removeCross(self,ps):
         """
