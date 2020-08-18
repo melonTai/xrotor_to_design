@@ -274,11 +274,14 @@ class PropDesign():
             交点座標
             [x, y]
         """
-        a = [p2[0] - p1[0], p2[1] - p1[1]]
-        b = [p4[0] - p3[0], p4[1] - p3[1]]
-        c = [p3[0]-p1[0],p3[1]-p1[1]]
+        v13 = [p3[0] - p1[0], p3[1] - p1[1]]
+        v34 = [p4[0] - p3[0], p4[1] - p3[1]]
+        v32 = [p2[0] - p3[0], p2[1] - p3[1]]
+        v12 = [p2[0] - p1[0], p2[1] - p1[1]]
+        S1 = abs(self.cross(v13, v34)/2)
+        S2 = abs(self.cross(v32, v34)/2)
 
-        return [p1[0] + a[0] * self.cross(b,c)/self.cross(b, a) , p1[1] + a[1] * self.cross(b,c)/self.cross(b, a)]
+        return [p1[0] + v12[0] * S1 / (S1 + S2) , p1[1] + v12[1] * S1 / (S1 + S2)]
 
     def removeCross(self,ps):
         """
