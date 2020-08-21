@@ -12,7 +12,7 @@ _scale = 10
 class PropDesign():
     def __init__(self):
 
-        # リブのオフセット(バルサの場合、外皮の厚み分)[mm]
+        # リブのオフセット(外皮の厚み分)[mm]
         self.rib_offset = 1
         # 設計ファイル読み込み(xrotorのrestartfile)
         self.filename = r"restartfile"
