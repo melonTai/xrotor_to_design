@@ -1,4 +1,4 @@
-#Author-fujita yuki
+#Author-melonTai
 #Description-xrotor(プロペラ設計ソフト)のrestartfileから図面を自動生成するスクリプト。\nfusion360上のUIからパラメータを入力できるようにしている。
 
 import adsk.core, adsk.fusion, traceback, math, os
