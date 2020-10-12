@@ -298,28 +298,29 @@ class PropDesign():
             交差が除かれた翼型座標
             [[newx1, newy1],[newx2, newy2],...]
         """
-        def _removeCross(ps):
-            if len(ps) < 5:
-                return ps
-            length = len(ps)
-            for i in range(3, length - 2):
-                for j in range(0, i - 1):
-                    if self.isCross(ps[i], ps[i+1], ps[j], ps[j+1]):
-                        c = self.getCross(ps[i], ps[i+1], ps[j], ps[j+1])
-                        if j < 20:
-                            del ps[i:]
-                            del ps[:j+1]
-                            ps.append(c)
-                        if len(ps)/3  < i and i < len(ps)*2/3:
-                            del ps[j+1:i+1]
-                            ps.insert(j+1,c)
-                        return ps, True
+        if len(ps) < 5:
+            return ps
+        length = len(ps)
+        i = 0
+        j = 0
+        while i < length-3:
+            j = i + 2
+            while j < length-1:
+                if self.isCross(ps[i],ps[i+1],ps[j],ps[j+1]):
+                    c = self.getCross(ps[i],ps[i+1],ps[j],ps[j+1])
+                    if i < len(ps)/6:
+                        del ps[:i+1]
+                        del ps[j+1:]
+                        ps.append(c)
+                        ps.insert(0,c)
+                    else:
+                        del ps[i+1:j+1]
+                        ps.insert(i+1,c)
+                length = len(ps)
+                j += 1
+            i += 1
 
-            return ps, False
-        result = _removeCross(ps)
-        while result[1]:
-            result = _removeCross(result[0])
-        return result[0]
+        return ps
 
     def getCenterThickness(self,airfoil, c):#中心線のy座標を求める
         """
